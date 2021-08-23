@@ -12,6 +12,44 @@ from webstories import Story
 from .forms import ImportStoryForm
 from .markup import AMPText
 
+import re
+import string
+from urllib import parse
+
+url_regex = re.compile("(artwork|src|poster|amp-orig-src|poster-portrait-src"
+                       "|publisher-logo-src)\s*=\s*(?:(?:\"((?:[^\\\"]|\\.)"
+                       "*)\")|(?:'((?:[^\\']|\\.)*)'))")
+
+def _contains_whitespace(s):
+    for c in s:
+        if c in string.whitespace:
+            return True
+    return False
+
+def _percent_encode_urls(regex_match):
+    match_full_text = regex_match.group(0)
+    value = regex_match.group(2)
+    if not value.startswith('data:') and _contains_whitespace(value):
+        return match_full_text.replace(value,
+                                       parse.quote(value,
+                                                   safe=string.punctuation))
+    return match_full_text
+
+def _make_url_absolute(regex_match, base_url):
+    match_full_text = regex_match.group(0)
+    value = regex_match.group(2)
+    if not value.startswith('http') and not \
+            value.strip() == '' and not \
+            value.startswith('data:'):
+        absolute_value = base_url + (''
+                                     if base_url.endswith('/')
+                                        or value.startswith('/')
+                                     else '/') \
+                         + value
+        return match_full_text.replace(value, absolute_value)
+    return match_full_text
+
+
 def import_story(request):
     if request.method == 'POST':
         form = ImportStoryForm(request.POST, user=request.user)
@@ -21,6 +59,11 @@ def import_story(request):
                 req = requests.get(source_url)
                 req.encoding = 'utf-8'
                 html = req.text
+                # Search and replace relative paths, appending the source url
+                html = url_regex.sub(lambda x:
+                                    _make_url_absolute(x, source_url), html)
+                # Percent-encode URLs with spaces
+                html = url_regex.sub(_percent_encode_urls, html)
                 story = Story(html)
                 story_is_valid = True
             except requests.exceptions.RequestException:
