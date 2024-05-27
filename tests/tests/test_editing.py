@@ -5,14 +5,14 @@ from django.test import override_settings
 
 from wagtail.images.models import Image
 from wagtail.models import Page
-from wagtail.test.utils import WagtailPageTests
+from wagtail.test.utils import WagtailPageTestCase
 from wagtail.test.utils.form_data import nested_form_data, streamfield
 
 from tests.models import StoryPage
 from tests.utils import get_test_image_file, TEST_MEDIA_DIR
 
 
-class TestEditing(WagtailPageTests):
+class TestEditing(WagtailPageTestCase):
     def setUp(self):
         shutil.rmtree(TEST_MEDIA_DIR, ignore_errors=True)
         self.user = User.objects.create_superuser(username='admin', email='admin@example.com', password='12345')

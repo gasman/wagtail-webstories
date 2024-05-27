@@ -17,9 +17,9 @@ if getattr(settings, 'WAGTAIL_WEBSTORIES_IMPORT_MODEL', None):
 
     @hooks.register('register_admin_menu_item')
     def register_webstories_item():
-        if WAGTAIL_VERSION >= (5, 2):
-            kwargs = {"classname": "icon icon-openquote"}
-        else:
-            kwargs = {"classnames": "icon icon-openquote"}
-
-        return MenuItem('Web stories', reverse('wagtail_webstories:import_story'), order=10000, **kwargs)
+        return MenuItem(
+            'Web stories',
+            reverse('wagtail_webstories:import_story'),
+            icon_name="openquote",
+            order=10000,
+        )

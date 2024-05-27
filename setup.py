@@ -27,7 +27,6 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Framework :: Django",
-        "Framework :: Django :: 3.2",
         "Framework :: Django :: 4.2",
         "Framework :: Django :: 5.0",
         "Framework :: Wagtail",
@@ -47,8 +46,8 @@ setup(
     extras_require={
         "testing": [
             "responses>=0.12,<1",
-            "Pillow>=4.0.0,<10.0.0",
-            "wagtailmedia>=0.6,<0.15",
+            "Pillow>=4.0.0,<11.0.0",
+            "wagtailmedia>=0.6,<0.16",
         ]
     },
     license="BSD",

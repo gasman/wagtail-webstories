@@ -6,6 +6,7 @@ Unreleased
 
 * Drop support for Wagtail < 5.2
 * Add support for Django 5.0
+* Drop support for Django < 4.2
 
 0.1.1 (2023-11-24)
 ------------------
