@@ -31,6 +31,12 @@ from .markup import AMPText
 Image = apps.get_model(get_image_model_string(), require_ready=False)
 
 
+def _fetch(url):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36'}
+    return requests.get(url, headers=headers)
+
+
 def _name_from_url(url):
     url_obj = urlparse(url)
     filename = url_obj.path.split('/')[-1]
@@ -45,13 +51,19 @@ class WebStoryPageMixin(models.Model):
 
     publisher = models.CharField(blank=False, max_length=2047)
 
-    publisher_logo = models.ForeignKey(Image, blank=True, null=True, related_name='+', on_delete=models.SET_NULL)
-    publisher_logo_src_original = models.URLField('Publisher logo URL', blank=True, max_length=2047, editable=False)
+    publisher_logo = models.ForeignKey(
+        Image, blank=True, null=True, related_name='+', on_delete=models.SET_NULL)
+    publisher_logo_src_original = models.URLField(
+        'Publisher logo URL', blank=True, max_length=2047, editable=False)
 
-    poster_image = models.ForeignKey(Image, blank=True, null=True, related_name='+', on_delete=models.SET_NULL)
-    poster_portrait_src_original = models.URLField('Poster portrait image URL', blank=True, max_length=2047, editable=False)
-    poster_square_src_original = models.URLField('Poster square image URL', blank=True, max_length=2047, editable=False)
-    poster_landscape_src_original = models.URLField('Poster landscape image URL', blank=True, max_length=2047, editable=False)
+    poster_image = models.ForeignKey(
+        Image, blank=True, null=True, related_name='+', on_delete=models.SET_NULL)
+    poster_portrait_src_original = models.URLField(
+        'Poster portrait image URL', blank=True, max_length=2047, editable=False)
+    poster_square_src_original = models.URLField(
+        'Poster square image URL', blank=True, max_length=2047, editable=False)
+    poster_landscape_src_original = models.URLField(
+        'Poster landscape image URL', blank=True, max_length=2047, editable=False)
 
     original_url = models.URLField('Original URL', blank=True, max_length=2047)
 
@@ -190,7 +202,8 @@ class WebStoryPageMixin(models.Model):
         if self.publisher_logo_src_original and not self.publisher_logo:
             try:
                 self.publisher_logo, created = self._image_from_url(
-                    urljoin(self.original_url, self.publisher_logo_src_original),
+                    urljoin(self.original_url,
+                            self.publisher_logo_src_original),
                     title="%s logo" % self.publisher,
                 )
                 has_changed = True
@@ -200,7 +213,8 @@ class WebStoryPageMixin(models.Model):
         if self.poster_portrait_src_original and not self.poster_image:
             try:
                 portrait_image_file = self._image_file_from_url(
-                    urljoin(self.original_url, self.poster_portrait_src_original)
+                    urljoin(self.original_url,
+                            self.poster_portrait_src_original)
                 )
                 self.poster_image, created = self._image_from_image_file(
                     portrait_image_file, title=self.title
@@ -218,7 +232,8 @@ class WebStoryPageMixin(models.Model):
                 self.poster_image.renditions.create(
                     filter_spec=self.PORTRAIT_IMAGE_FILTER,
                     file=portrait_image_file,
-                    focal_point_key=portrait_filter.get_cache_key(self.poster_image)
+                    focal_point_key=portrait_filter.get_cache_key(
+                        self.poster_image)
                 )
 
                 if self.poster_square_src_original:
@@ -227,9 +242,11 @@ class WebStoryPageMixin(models.Model):
                         self.poster_image.renditions.create(
                             filter_spec=self.SQUARE_IMAGE_FILTER,
                             file=self._image_file_from_url(
-                                urljoin(self.original_url, self.poster_square_src_original)
+                                urljoin(self.original_url,
+                                        self.poster_square_src_original)
                             ),
-                            focal_point_key=square_filter.get_cache_key(self.poster_image)
+                            focal_point_key=square_filter.get_cache_key(
+                                self.poster_image)
                         )
                     except requests.exceptions.RequestException:
                         pass
@@ -240,9 +257,11 @@ class WebStoryPageMixin(models.Model):
                         self.poster_image.renditions.create(
                             filter_spec=self.LANDSCAPE_IMAGE_FILTER,
                             file=self._image_file_from_url(
-                                urljoin(self.original_url, self.poster_landscape_src_original)
+                                urljoin(self.original_url,
+                                        self.poster_landscape_src_original)
                             ),
-                            focal_point_key=landscape_filter.get_cache_key(self.poster_image)
+                            focal_point_key=landscape_filter.get_cache_key(
+                                self.poster_image)
                         )
                     except requests.exceptions.RequestException:
                         pass
@@ -270,7 +289,8 @@ class WebStoryPageMixin(models.Model):
                     or ("image from story: %s" % self.title)
                 )
                 try:
-                    image, created = self._image_from_url(image_url, title=title)
+                    image, created = self._image_from_url(
+                        image_url, title=title)
                     img_tag['data-wagtail-image-id'] = image.id
                     del img_tag['src']
                     has_changed = True
@@ -288,7 +308,7 @@ class WebStoryPageMixin(models.Model):
     def _image_file_from_url(self, url):
         url_obj = urlparse(url)
         filename = url_obj.path.split('/')[-1] or 'image'
-        response = requests.get(url)
+        response = _fetch(url)
         response.raise_for_status()
         return ImageFile(ContentFile(response.content), name=filename)
 
@@ -396,7 +416,7 @@ class WebStoryPageMixin(models.Model):
     def _video_file_from_url(self, url):
         url_obj = urlparse(url)
         filename = url_obj.path.split('/')[-1] or 'video'
-        response = requests.get(url)
+        response = _fetch(url)
         response.raise_for_status()
         return File(ContentFile(response.content), name=filename)
 
@@ -441,13 +461,18 @@ def get_story_page_models():
 class ExternalStory(models.Model):
     url = models.TextField()
     # a SHA-1 hash of the URL
-    url_hash = models.CharField(max_length=40, editable=False, unique=True, db_index=True)
+    url_hash = models.CharField(
+        max_length=40, editable=False, unique=True, db_index=True)
     title = models.TextField(blank=True, editable=False)
     publisher = models.TextField(blank=False, editable=False)
-    publisher_logo_src = models.TextField('Publisher logo URL', blank=True, editable=False)
-    poster_portrait_src = models.TextField('Poster portrait image URL', blank=True, editable=False)
-    poster_square_src = models.TextField('Poster square image URL', blank=True, editable=False)
-    poster_landscape_src = models.TextField('Poster landscape image URL', blank=True, editable=False)
+    publisher_logo_src = models.TextField(
+        'Publisher logo URL', blank=True, editable=False)
+    poster_portrait_src = models.TextField(
+        'Poster portrait image URL', blank=True, editable=False)
+    poster_square_src = models.TextField(
+        'Poster square image URL', blank=True, editable=False)
+    poster_landscape_src = models.TextField(
+        'Poster landscape image URL', blank=True, editable=False)
     last_fetched_at = models.DateTimeField()
 
     @classmethod
@@ -456,7 +481,7 @@ class ExternalStory(models.Model):
         try:
             return cls.objects.get(url_hash=url_hash)
         except cls.DoesNotExist:
-            html = requests.get(url).text
+            html = _fetch(url).text
             story = Story(html)
             result, created = cls.objects.update_or_create(
                 url_hash=url_hash, defaults={
